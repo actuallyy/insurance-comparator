@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MediCompare 23.1 - Finalisé</title>
+    <style>
+        /* --- DESIGN SYSTEM --- */
+        :root {
+            --primary: #2563eb; /* Bleu Confiance */
+            --alone: #0891b2; /* Cyan (Vivre Seul) */
+            --nouveaune: #e11d48; /* Rouge (Nouveau-né) */
+            --famille: #f97316; /* Orange (Famille) */
+            --retraite: #7c3aed; /* Violet (Retraités) */
+            --student: #84cc16; /* Lime (Étudiant) */
+            --mobility: #3b82f6; /* Bleu Auto */
+            --natural: #16a34a; /* Vert Fonce */
+            --expert: #d97706; /* Or (Expert) */
+            --bg: #f8fafc;
+            --white: #ffffff;
+            --text: #0f172a;
+            --radius: 16px;
+            --shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+
+        /* RESET & BASE */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding-bottom: 90px; }
+
+        /* --- HEADER --- */
+        header { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 15px 20px; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.3rem; font-weight: 900; color: var(--primary); letter-spacing: -0.5px; display: flex; align-items: center; gap: 5px; }
+
+        /* --- NAV SCROLLABLE --- */
+        .nav-scroller { overflow-x: auto; white-space: nowrap; padding: 15px 20px; background: var(--bg); scrollbar-width: none; }
+        .nav-scroller::-webkit-scrollbar { display: none; }
+        
+        .nav-pill { 
+            display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; margin-right: 8px;
+            background: var(--white); border: 1px solid #e2e8f0; border-radius: 30px;
+            color: #64748b; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .nav-pill.active { background: var(--primary); color: white; border-color: var(--primary); transform: scale(1.05); }
+        .nav-pill.active::before { content: "✓"; color: white; font-weight: 900; margin-right: 4px; }
+        .nav-pill.active.cyan { background: var(--alone); border-color: var(--alone); }
+        .nav-pill.active.nouveaune { background: var(--nouveaune); border-color: var(--nouveaune); }
+        .nav-pill.active.famille { background: var(--famille); border-color: var(--famille); }
+        .nav-pill.active.retraite { background: var(--retraite); border-color: var(--retraite); }
+        .nav-pill.active.student { background: var(--student); border-color: var(--student); }
+        .nav-pill.active.mobility { background: var(--mobility); border-color: var(--mobility); }
+        .nav-pill.active.natural { background: var(--natural); border-color: var(--natural); }
+
+        /* --- CONTAINER --- */
+        .container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+        .view-section { display: none; animation: fadeIn 0.4s ease; }
+        .view-section.active { display: block; }
+
+        /* --- HERO & QUOTE --- */
+        .hero-quote { text-align: center; padding: 50px 20px; background: linear-gradient(135deg, var(--primary), #4338ca); color: white; border-radius: 20px; margin-top: 20px; box-shadow: var(--shadow); margin-bottom: 30px; }
+        .quote-text { font-size: 1.5rem; font-weight: 600; font-style: italic; margin-bottom: 15px; line-height: 1.4; }
+
+        /* --- ACCUEIL CTA BLOCK --- */
+        .main-cta-block { background: var(--white); padding: 30px; border-radius: var(--radius); box-shadow: var(--shadow); margin-top: 20px; }
+        .cta-header h2 { font-size: 1.8rem; color: var(--primary); margin-bottom: 5px; }
+        
+        .profile-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+        .profile-btn { background: #f1f5f9; padding: 20px 10px; border-radius: 12px; text-align: center; font-weight: 700; color: var(--text); border: 2px solid transparent; }
+
+        /* --- FORMS & CARDS --- */
+        .card-form { background: var(--white); padding: 25px; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; border-top: 4px solid var(--primary); }
+        h2 { font-size: 1.6rem; margin-top: 0; margin-bottom: 5px; }
+        .subtitle { color: #64748b; margin-bottom: 25px; font-size: 0.95rem; line-height: 1.5; }
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.9rem; }
+        select, input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; background: #fff; }
+        .btn-cta { width: 100%; padding: 16px; background: var(--text); color: white; border: none; border-radius: 14px; font-weight: 800; font-size: 1.1rem; cursor: pointer; }
+
+        /* --- RESULTS (Lisibilité des offres) --- */
+        #loader { display: none; text-align: center; padding: 40px; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .offer-card { background: var(--white); border-radius: var(--radius); padding: 20px; margin-bottom: 15px; box-shadow: var(--shadow); border: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 15px; }
+        .tags-container { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #eee; width: 100%; }
+        .tag { padding: 6px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; background: #f1f5f9; color: var(--primary); border: 1px solid #bfdbfe; }
+        .offer-header { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 5px; }
+        .insurer-logo { font-weight: 900; font-size: 1.2rem; color: var(--text); }
+        .price-tag { font-size: 1.6rem; font-weight: 800; color: var(--primary); }
+
+        /* --- INFO GRID (Médecines Douces) --- */
+        .def-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .def-card { background: white; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: var(--shadow); }
+        .def-card h4 { color: var(--natural); margin: 0 0 5px 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; }
+        .def-card h4::before { content: "•"; color: var(--natural); font-size: 1.5rem; }
+        .price-info { display: block; margin-top: 5px; font-weight: bold; color: var(--nouveaune); font-size: 0.8rem; }
+        .price-info.kiné { color: var(--primary); } 
+
+        /* --- CHATBOT WIDGET (Final CSS pour la petite icône) --- */
+        .chat-widget { position: fixed; bottom: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; align-items: flex-end; }
+        .chat-btn { 
+            width: 50px; height: 50px; 
+            background: var(--primary); border-radius: 50%; 
+            box-shadow: 0 3px 10px rgba(37, 99, 235, 0.4); 
+            display: flex; justify-content: center; align-items: center; 
+            cursor: pointer; border: none; font-size: 24px; 
+            color:white; transition: 0.3s;
+        }
+        .chat-btn:hover { transform: scale(1.1); }
+        .chat-window { width: 320px; height: 400px; display: none; flex-direction: column; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); margin-bottom: 15px; }
+        .chat-header { background: var(--primary); color: white; padding: 15px; font-weight: bold; font-size: 1rem; }
+        .chat-body { flex: 1; padding: 15px; overflow-y: auto; background: #f8fafc; font-size: 0.9rem; display: flex; flex-direction: column; }
+        .chat-input-area { padding: 10px; background: white; border-top: 1px solid #eee; display: flex; gap: 5px; }
+        .chat-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; font-size: 0.9rem; }
+        .chat-send { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; }
+        .msg { margin-bottom: 10px; max-width: 80%; padding: 10px 15px; border-radius: 12px; line-height: 1.4; }
+        .msg.bot { background: #e2e8f0; color: #334155; border-bottom-left-radius: 2px; align-self: flex-start; }
+        .msg.user { background: var(--primary); color: white; align-self: flex-end; margin-left: auto; border-bottom-right-radius: 2px; }
+
+        /* --- MEDIA QUERIES --- */
+        @media (min-width: 768px) {
+            .offer-card { flex-direction: row; align-items: center; }
+            .offer-card > div:first-child { flex-basis: 30%; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="#" class="logo" onclick="switchTab('home', document.querySelector('.nav-pill'))">MediCompare<span>23.1</span></a>
+        <div style="font-weight:bold; font-size:0.9rem; color:#64748b;">🇫🇷 France</div>
+    </header>
+
+    <div class="nav-scroller">
+        <div class="nav-pill active" onclick="switchTab('home', this)">Accueil</div>
+        <div class="nav-pill alone" onclick="switchTab('alone', this)">Vivre Seul</div>
+        <div class="nav-pill nouveaune" onclick="switchTab('nouveaune', this)">Nouveau-né</div>
+        <div class="nav-pill famille" onclick="switchTab('famille', this)">Famille</div>
+        <div class="nav-pill retraite" onclick="switchTab('retraite', this)">Retraités</div>
+        <div class="nav-pill student" onclick="switchTab('student', this)">Étudiant</div>
+        <div class="nav-pill mobility" onclick="switchTab('auto', this)">Auto / Moto</div>
+        <div class="nav-pill natural" onclick="switchTab('natural', this)">Médecines Douces</div>
+        <div class="nav-pill expert" onclick="switchTab('quote', this)">Devis Expert</div>
+    </div>
+
+    <div class="container">
+
+        <div id="tab-home" class="view-section active">
+            
+            <div class="hero-quote">
+                <div class="quote-text">"Prenez soin de votre corps. C'est le seul endroit où vous êtes obligé de vivre."</div>
+                <div class="quote-author">- Jim Rohn</div>
+            </div>
+
+            <div class="main-cta-block">
+                <div class="cta-header">
+                    <h2 style="color:var(--primary);">Quel est votre besoin principal ?</h2>
+                    <p class="subtitle">Sélectionnez votre profil pour comparer les tarifs en moins de 2 minutes.</p>
+                </div>
+                
+                <div class="profile-grid">
+                    <a href="#" class="profile-btn" onclick="openTabAndFocus('retraite')" style="background-color:var(--retraite); color:white;">Retraités</a>
+                    <a href="#" class="profile-btn" onclick="openTabAndFocus('famille')" style="background-color:var(--famille); color:white;">Famille</a>
+                    <a href="#" class="profile-btn" onclick="openTabAndFocus('alone')" style="background-color:var(--alone); color:white;">Vivre Seul</a>
+                    <a href="#" class="profile-btn" onclick="openTabAndFocus('auto')" style="background-color:var(--mobility); color:white;">Auto/Moto</a>
+                    <a href="#" class="profile-btn" onclick="openTabAndFocus('nouveaune')" style="background-color:var(--nouveaune); color:white;">Nouveau-né</a>
+                    <a href="#" class="profile-btn" onclick="openTabAndFocus('student')" style="background-color:var(--student); color:white;">Étudiant</a>
+                </div>
+
+                <div style="text-align:center; margin-top:30px; padding-top:15px; border-top:1px dashed #eee;">
+                    Ou accédez au <a href="#" onclick="openTabAndFocus('quote')" style="color:var(--expert); font-weight:bold;">Devis Expert Personnalisé (9.90€)</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-nouveaune" class="view-section">
+            <h2 style="color:var(--nouveaune)">Mutuelle Nouveau-né & Maternité</h2>
+            <p class="subtitle">Des garanties spécifiques pour les 0-3 ans : vaccination, forfait pédiatre et prime de naissance élevée.</p>
+            <div class="card-form border-nouveaune">
+                <h3>Calendrier Vaccinal (0-2 ans)</h3>
+                <ul style="padding-left:20px; line-height:1.6; color:#475569; font-size:0.95rem;">
+                    <li>**2 mois** : DTP, Hépatite B, Coqueluche, Pneumocoque.</li>
+                    <li>**12 mois** : ROR (Rougeole-Oreillons-Rubéole) et Méningocoque C.</li>
+                </ul>
+            </div>
+            
+            <div class="card-form border-nouveaune">
+                <h3>Comparateur "Prime de Naissance"</h3>
+                <form onsubmit="searchOffers('nouveaune'); return false;">
+                    <div class="form-group"><label>Prime de Naissance souhaitée</label><select><option>500 € et plus</option><option>300 € à 500 €</option></select></div>
+                    <button class="btn-cta" style="background:var(--nouveaune)">Voir 10 offres pour Bébé</button>
+                </form>
+            </div>
+            <div id="res-nouveaune" style="margin-top:30px;"></div>
+        </div>
+
+        <div id="tab-retraite" class="view-section">
+            <h2 style="color:var(--retraite)">Mutuelle Retraités (65 ans et +)</h2>
+            <p class="subtitle">Focus sur l'auditif, le dentaire et l'assistance à domicile. Sans questionnaire médical.</p>
+            <div class="card-form border-retraite">
+                <form onsubmit="searchOffers('retraite'); return false;">
+                    <div class="form-group"><label>Votre Âge</label><input type="number" value="67"></div>
+                    <div class="form-group"><label>Votre Priorité</label><select><option>Prothèses Auditives / Dentaires</option><option>Cure Thermale / Bien-être</option></select></div>
+                    <button class="btn-cta" style="background:var(--retraite)">Comparer 10 offres Auditif/Dentaire</button>
+                </form>
+            </div>
+            <div id="res-retraite" style="margin-top:30px;"></div>
+        </div>
+
+        <div id="tab-famille" class="view-section">
+            <h2 style="color:var(--famille)">Mutuelle Famille (Avec enfants)</h2>
+            <p class="subtitle">Couverture de la mère, du père et de plusieurs enfants sur un seul contrat.</p>
+            <div class="card-form border-famille">
+                <form onsubmit="searchOffers('famille'); return false;">
+                    <div class="form-group"><label>Nombre d'enfants</label><input type="number" value="2"></div>
+                    <button class="btn-cta" style="background:var(--famille)">Voir 10 offres pour Famille</button>
+                </form>
+            </div>
+            <div id="res-famille" style="margin-top:30px;"></div>
+        </div>
+
+        <div id="tab-alone" class="view-section">
+            <h2 style="color:var(--alone)">Vivre Seul & Solo</h2>
+            <p class="subtitle">Assistance en cas d'accident, soutien psy et budget optimisé.</p>
+            <div class="card-form border-alone">
+                <form onsubmit="searchOffers('alone'); return false;">
+                    <div class="form-group"><label>Priorité</label><select><option>Assistance à domicile</option><option>Budget serré</option></select></div>
+                    <button class="btn-cta" style="background:var(--alone)">Voir 10 offres Solo</button>
+                </form>
+            </div>
+            <div id="res-alone" style="margin-top:30px;"></div>
+        </div>
+
+        <div id="tab-student" class="view-section">
+            <h2 style="color:var(--student)">Mutuelle Étudiante</h2>
+            <p class="subtitle">Petit budget, stage à l'étranger ou besoin psychologique.</p>
+            <div class="card-form border-student">
+                <form onsubmit="searchOffers('student'); return false;">
+                    <div class="form-group"><label>Profil</label><select><option>Étudiant en France</option><option>Stage Étranger</option></select></div>
+                    <button class="btn-cta" style="background:var(--student)">Comparer 10 offres Étudiant</button>
+                </form>
+            </div>
+            <div id="res-student" style="margin-top:30px;"></div>
+        </div>
+
+        <div id="tab-auto" class="view-section">
+            <h2 style="color:var(--mobility)">Assurance Mobilité : Auto / Moto / Trottinette</h2>
+            <p class="subtitle">Jeune conducteur (surprime) ou Conducteur âgé (visite médicale).</p>
+            <div class="card-form border-auto">
+                <form onsubmit="searchOffers('auto'); return false;">
+                    <div class="form-group"><label>Véhicule</label><select id="vehiculeType"><option value="car">Voiture</option><option value="moto">Moto</option><option value="trot">Trottinette</option></select></div>
+                    <div class="form-group"><label>Profil Conducteur</label><select id="driverProfile"><option value="exp">Expérimenté</option><option value="young">Jeune Conducteur</option><option value="aged">Conducteur Agé (+65 ans)</option></select></div>
+                    <button class="btn-cta" style="background:var(--mobility)">Comparer les Assurances</button>
+                </form>
+            </div>
+            <div id="res-auto" style="margin-top:30px;"></div>
+        </div>
+
+        <div id="tab-natural" class="view-section">
+            <h2 style="color:var(--natural)">Guide des Médecines Douces</h2>
+            <p class="subtitle">Découvrez ces pratiques et trouvez le forfait bien-être.</p>
+            <div class="def-grid">
+                <div class="def-card">
+                    <h4>🦴 Ostéopathie</h4>
+                    <p>Thérapie manuelle pour le mal de dos. <span class="price-info">Coût moyen : 65 € / séance (non remboursé Sécu)</span></p>
+                </div>
+                <div class="def-card">
+                    <h4>🤸 Kinésithérapie</h4>
+                    <p>Rééducation fonctionnelle. <span class="price-info kiné">Couvert si prescrit (hors mutuelle)</span></p>
+                </div>
+                <div class="def-card">
+                    <h4>🧘 Sophrologie</h4>
+                    <p>Gestion du stress et du sommeil. <span class="price-info">Coût moyen : 60 € / séance</span></p>
+                </div>
+                <div class="def-card">
+                    <h4>💊 Naturopathie</h4>
+                    <p>Conseils en nutrition et hygiène de vie. <span class="price-info">Coût moyen : 70 € / séance</span></p>
+                </div>
+                <div class="def-card">
+                    <h4>🦶 Réflexologie</h4>
+                    <p>Massage des zones réflexes pour apaiser les tensions. <span class="price-info">Coût moyen : 55 € / séance</span></p>
+                </div>
+            </div>
+            <div class="card-form border-natural">
+                <h3>Comparateur "Forfait Bien-être"</h3>
+                <form onsubmit="searchOffers('natural'); return false;">
+                    <button class="btn-cta" style="background:var(--natural)">Voir les forfaits (jusqu'à 250€)</button>
+                </form>
+            </div>
+            <div id="res-natural" style="margin-top:30px;"></div>
+        </div>
+
+        <div id="tab-quote" class="view-section">
+            <div class="card-form" style="border: 2px solid #d97706; background:#fffbeb;">
+                <h2 style="color:#d97706; text-align:center;">Devis Expert</h2>
+                <p style="text-align:center; color:#b45309;">Analyse sur-mesure par un courtier humain.</p>
+                <form onsubmit="alert('Redirection paiement...'); return false;">
+                    <div class="form-group"><label>Email</label><input type="email"></div>
+                    <div style="text-align:center; font-size:1.5rem; font-weight:800; margin:20px 0;">9.90 €</div>
+                    <button class="btn-cta" style="background:linear-gradient(45deg, #d97706, #b45309);">Commander</button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="chat-widget">
+        <div class="chat-window" id="chatWindow">
+            <div class="chat-header">
+                <span>Assistant MediHealth</span>
+                <span style="cursor:pointer;" onclick="toggleChat()">X</span>
+            </div>
+            <div class="chat-body" id="chatBody">
+                <div class="msg bot">Bonjour ! Je suis votre assistant virtuel. Comment puis-je vous aider ? (Ex: "Prix senior", "Remboursement psy", "C'est quoi l'ostéopathie ?")</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chatInput" class="chat-input" placeholder="Posez votre question..." onkeypress="handleEnter(event)">
+                <button class="chat-send" onclick="sendMessage()">→</button>
+            </div>
+        </div>
+        <button class="chat-btn" onclick="toggleChat()">🤖</button>
+    </div>
+
+    <div id="loader">
+        <div class="spinner"></div>
+        <p>Recherche des meilleures offres...</p>
+    </div>
+
+    <script>
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            if(el) el.classList.add('active');
+            window.scrollTo(0,0);
+        }
+
+        // Fonction d'ouverture des CTA de l'accueil
+        function openTabAndFocus(tabId) {
+            const pill = document.querySelector(`.nav-scroller .nav-pill[onclick*="'${tabId}'"]`);
+            if (pill) {
+                switchTab(tabId, pill);
+            }
+        }
+        
+        // --- CHATBOT LOGIC ---
+        function toggleChat() {
+            const chat = document.getElementById('chatWindow');
+            chat.style.display = chat.style.display === 'flex' ? 'none' : 'flex';
+        }
+        function handleEnter(e) { if(e.key === 'Enter') sendMessage(); }
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const body = document.getElementById('chatBody');
+            const text = input.value.trim();
+            
+            if(text === "") return;
+            body.innerHTML += `<div class="msg user">${text}</div>`;
+            input.value = "";
+            body.scrollTop = body.scrollHeight;
+
+            setTimeout(() => {
+                let response = "Je n'ai pas bien compris. Essayez 'Retraite', 'Auto' ou 'Naturel'.";
+                const t = text.toLowerCase();
+
+                if(t.includes("bonjour") || t.includes("salut")) response = "Bonjour ! Prêt à trouver la meilleure offre ?";
+                else if(t.includes("retraite") || t.includes("senior")) response = "Pour les retraités, nous mettons en avant les renforts Auditif et Dentaire.";
+                else if(t.includes("ostéo") || t.includes("naturel")) response = "Regardez notre onglet 'Médecines Douces'. Alptis et April remboursent bien ces forfaits.";
+                else if(t.includes("devis") || t.includes("expert")) response = "L'étude experte personnalisée est disponible pour 9.90€ dans l'onglet Devis Expert.";
+
+                body.innerHTML += `<div class="msg bot">${response}</div>`;
+                body.scrollTop = body.scrollHeight;
+            }, 1000);
+        }
+
+        // --- COMPARATOR ENGINE (CORRECTION DU LIEN ICI) ---
+        const ALL_HEALTH_BRANDS = [
+            { name: "AXA Santé", price: 35, tags: ["Réseau de soins", "Tiers payant"] },
+            { name: "Allianz", price: 42, tags: ["Service premium", "Assistance 24/7"] },
+            { name: "Malakoff Humanis", price: 38, tags: ["Complémentaire santé", "Mutuelle historique"] },
+            { name: "Groupama", price: 40, tags: ["Proximité", "Réductions Famille"] },
+            { name: "Alan", price: 30, tags: ["100% Digital", "Appli simple"] },
+            { name: "SwissLife", price: 48, tags: ["Haut de gamme", "Remboursement rapide"] },
+            { name: "MGEN", price: 32, tags: ["Mutuelle fonction publique", "Solidarité"] },
+            { name: "April", price: 29, tags: ["Modulable", "Devis rapide"] },
+            { name: "Generali", price: 45, tags: ["International", "Couverture complète"] },
+            { name: "MACIF", price: 36, tags: ["Essentiel", "Bonne assistance"] },
+            { name: "Aésio Mutuelle", price: 37, tags: ["Acteur mutualiste", "Prévoyance"] },
+            { name: "Crédit Mutuel", price: 39, tags: ["Banque & Assurance", "Réseau"] }
+        ];
+
+        function getOffers(baseOffers, modifier) {
+            return baseOffers.map(o => ({
+                ...o,
+                price: Math.round(o.price * modifier.priceMultiplier + modifier.priceOffset),
+                tags: [...o.tags, ...modifier.extraTags].slice(0, 4)
+            })).slice(0, 10); // LIMITÉ À 10 OFFRES PAR CATÉGORIE
+        }
+
+        function searchOffers(type) {
+            const container = document.getElementById('res-' + type);
+            const loader = document.getElementById('loader');
+            
+            container.innerHTML = '';
+            container.style.display = 'none';
+            loader.style.display = 'block';
+
+            setTimeout(() => {
+                loader.style.display = 'none';
+                container.style.display = 'block';
+                
+                let offers = [];
+                let color = 'var(--primary)';
+                let priceBaseModifier = { priceMultiplier: 1.0, priceOffset: 0, extraTags: [] };
+                let currentBrandList = ALL_HEALTH_BRANDS;
+
+                if (type === 'nouveaune') {
+                    color = 'var(--nouveaune)';
+                    priceBaseModifier = { priceMultiplier: 1.1, priceOffset: 5, extraTags: ["Prime 500€", "Pédiatre max"] };
+                    currentBrandList = ALL_HEALTH_BRANDS.filter(o => o.name !== 'April' && o.name !== 'SwissLife');
+                    offers = getOffers(currentBrandList, priceBaseModifier);
+                }
+                else if (type === 'retraite') {
+                    color = 'var(--retraite)';
+                    priceBaseModifier = { priceMultiplier: 1.8, priceOffset: 10, extraTags: ["Renfort Auditif", "Sans questionnaire"] };
+                    currentBrandList = ALL_HEALTH_BRANDS.filter(o => o.name !== 'Alan');
+                    offers = getOffers(currentBrandList, priceBaseModifier);
+                }
+                else if (type === 'famille') {
+                    color = 'var(--famille)';
+                    priceBaseModifier = { priceMultiplier: 1.2, priceOffset: 15, extraTags: ["Chambre individuelle", "Sport enfant inclus"] };
+                    offers = getOffers(ALL_HEALTH_BRANDS, priceBaseModifier);
+                }
+                else if (type === 'alone') {
+                    color = 'var(--alone)';
+                    priceBaseModifier = { priceMultiplier: 0.9, priceOffset: 0, extraTags: ["Assistance à domicile 24/7", "Soutien psy"] };
+                    offers = getOffers(ALL_HEALTH_BRANDS, priceBaseModifier);
+                }
+                else if (type === 'student') {
+                    color = 'var(--student)';
+                    priceBaseModifier = { priceMultiplier: 0.5, priceOffset: 10, extraTags: ["Budget serré", "Couverture stages UE"] };
+                    currentBrandList = ALL_HEALTH_BRANDS.filter(o => o.name === 'MGEN' || o.name === 'April' || o.name === 'Alan' || o.name === 'Aésio Mutuelle');
+                    offers = getOffers(currentBrandList, priceBaseModifier);
+                }
+                else if (type === 'natural') {
+                    color = 'var(--natural)';
+                    priceBaseModifier = { priceMultiplier: 1.1, priceOffset: 8, extraTags: ["Forfait Ostéo 200€", "Sophrologie"] };
+                    currentBrandList = ALL_HEALTH_BRANDS.filter(o => o.name !== 'Groupama' && o.name !== 'MACIF');
+                    offers = getOffers(currentBrandList, priceBaseModifier);
+                }
+                else if (type === 'auto') {
+                    color = 'var(--mobility)';
+                    const profile = document.getElementById('driverProfile').value;
+                    let autoBasePrice = 35;
+                    let autoTags = [];
+
+                    if (profile === 'young') { autoBasePrice = 75; autoTags = ["Surprime élevée", "Assistance premium"]; }
+                    else if (profile === 'aged') { autoBasePrice = 40; autoTags = ["Petit rouleur", "Rappel visite médicale"]; }
+                    else { autoBasePrice = 45; autoTags = ["Tous risques", "Bonus protection"]; }
+                    
+                    offers = [
+                        { name: "AXA Auto", price: autoBasePrice + 5, tags: ["Dépannage 1h", ...autoTags] },
+                        { name: "MMA Auto", price: autoBasePrice - 2, tags: ["Bonus 50%", ...autoTags] },
+                        { name: "Allianz Auto", price: autoBasePrice + 10, tags: ["Service Premium", ...autoTags] },
+                        { name: "Direct Assurance", price: autoBasePrice - 5, tags: ["100% Web", ...autoTags] },
+                        { name: "Groupama", price: autoBasePrice + 2, tags: ["Agence locale", ...autoTags] },
+                    ].slice(0, 10);
+                }
+
+                let html = `<h3 style="margin-bottom:15px; color:${color}">${offers.length} Devis trouvés</h3>`;
+                offers.forEach(o => {
+                    let promoHtml = o.promo ? `<span class="tag promo">${o.promo}</span>` : '';
+                    html += `
+                        <div class="offer-card" style="border-left: 5px solid ${color};">
+                            <div class="offer-header">
+                                <div class="insurer-logo">${o.name}</div>
+                                <div class="price-tag" style="color:${color}">${o.price}€<span style="font-size:0.8rem;color:#999;font-weight:400">/mois</span></div>
+                            </div>
+                            <div class="tags-container">
+                                ${promoHtml}
+                                ${o.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+                            </div>
+                            
+                            <button class="btn-cta" 
+                                style="margin-top:15px; padding:10px; font-size:0.9rem; background:white; color:var(--text); border:1px solid #ccc;"
+                                onclick="window.location.href='devis-detail.html?mutuelle=${o.name.replace(/\s/g, '-')}'">
+                                Voir le détail
+                            </button>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+
+            }, 800);
+        }
+    </script>
+</body>
+</html>
